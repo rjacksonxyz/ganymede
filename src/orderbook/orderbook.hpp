@@ -1,4 +1,6 @@
 #include "../order/order.hpp"
+#include "../trade/trade.hpp"
+
 #include <functional>
 #include <map>
 #include <mutex>
@@ -25,4 +27,5 @@ public:
   int AddOrder(Order::OrderPointer order);
   int CancelOrder(Order::OrderId id);
   int HandleMarketOrder(Order::OrderPointer order);
+  Trade MakeTrade(Order::OrderPointer o1, Order::OrderPointer o2);
 };

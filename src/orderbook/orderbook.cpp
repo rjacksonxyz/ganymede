@@ -20,20 +20,24 @@ int OrderBook::AddOrder(Order::OrderPointer o) {
   return 0;
 }
 
+// TODO: Complete implemtation.
 int OrderBook::HandleMarketOrder(Order::OrderPointer o) {
   Order::Side side = o->GetSide();
   if (side == Order::Side::Bid) {
     if (!ask_orders.empty())
-      const auto&[lowest_ask, _] = *(ask_orders.rbegin());
-      
+      const auto&[lowest_ask, id] = *(ask_orders.rbegin());
     else 
       market_buy_orders.push(o);
   }
   else {
     if (!bid_orders.empty())
-      auto highest_bid = bid_orders.begin();
+      const auto&[highest_bid, _] = *(bid_orders.begin());
     else
       market_sell_orders.push(o);
   }
 
+}
+// TODO: Complete implementation
+Trade OrderBook::MakeTrade(Order::OrderPointer o1, Order::OrderPointer o2) {
+  return;
 }
