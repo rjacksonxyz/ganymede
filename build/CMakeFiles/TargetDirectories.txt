@@ -1,4 +1,0 @@
-/Users/rjacksonxyz/workspace/ganymede/build/CMakeFiles/ganymede.dir
-/Users/rjacksonxyz/workspace/ganymede/build/CMakeFiles/example.dir
-/Users/rjacksonxyz/workspace/ganymede/build/CMakeFiles/edit_cache.dir
-/Users/rjacksonxyz/workspace/ganymede/build/CMakeFiles/rebuild_cache.dir
