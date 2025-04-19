@@ -1,81 +1,115 @@
 #include "orderbook.hpp"
 #include <iostream>
 
-int Orderbook::AddOrder(Order::OrderPointer o) {
+int Orderbook::AddOrder(OrderPointer o)
+{
   auto price = o->GetPrice();
 
   // TODO: Market Order Support
-  Order::OrderType type_ = o->GetType();
-  Order::Side side_ = o->GetSide();
+  OrderType type_ = o->GetType();
+  Side side_ = o->GetSide();
 
-  switch (type_) {
-    case Order::OrderType::Market:
-      HandleMarketOrder(o);
-      break;
-    case Order::OrderType::Limit:
-      HandleLimitOrder(o);
-      break;
-    default:
-      // TODO: Stop Order Support
-      // TODO: Iceberg Order Support
-      // TODO: Pegged Order Support
-      // TODO: Trailing Stop Order Support
-      // TODO: Fill or Kill Order Support
-      std::cout << (int)type_ << " order type not supported" << '\n';
+  switch (type_)
+  {
+  case OrderType::Market:
+    HandleMarketOrder(o);
+    break;
+  case OrderType::Limit:
+    HandleLimitOrder(o);
+    break;
+  default:
+    // TODO: Stop Order Support
+    // TODO: Iceberg Order Support
+    // TODO: Pegged Order Support
+    // TODO: Trailing Stop Order Support
+    // TODO: Fill or Kill Order Support
+    std::cout << (int)type_ << " order type not supported" << '\n';
   }
   MatchOrders();
   return 0;
 }
 
 // TODO: Complete implemtation.
-int Orderbook::HandleMarketOrder(Order::OrderPointer o) {
-  Order::Side side = o->GetSide();
-  if (side == Order::Side::Bid)
+int Orderbook::HandleMarketOrder(OrderPointer o)
+{
+  Side side = o->GetSide();
+  if (side == Side::Bid)
     market_buy_orders.push(o);
-  else 
+  else
     market_sell_orders.push(o);
   return 0;
 }
 
-int Orderbook::HandleLimitOrder(Order::OrderPointer o) {
-  Order::Side side = o->GetSide();
-  if (side == Order::Side::Bid)
+int Orderbook::HandleLimitOrder(OrderPointer o)
+{
+  Side side = o->GetSide();
+  if (side == Side::Bid)
     bid_orders[o->GetPrice()].push_back(o);
-  else 
+  else
     ask_orders[o->GetPrice()].push_back(o);
   return 0;
 }
 
-
-void Orderbook::MatchOrders() {
+void Orderbook::MatchOrders()
+{
   // retrieve the highest bids and lowest asks
   std::vector<Trade> trades;
-  while (true) {
+  while (true)
+  {
     if (bid_orders.empty() || ask_orders.empty())
       break;
-    
-    auto& [bidPrice, bids] = *bid_orders.begin();
-    auto& [askPrice, asks] = *ask_orders.begin();
+
+    auto &[bidPrice, bids] = *bid_orders.begin();
+    auto &[askPrice, asks] = *ask_orders.begin();
     if (bidPrice < askPrice)
       break;
-    while (!bids.empty() && !asks.empty()){
+    while (!bids.empty() && !asks.empty())
+    {
       auto bid = bids.front();
       auto ask = asks.front();
       auto trade = MakeTrade(bid, ask);
       trades.push_back(trade);
-      if (bid->IsFilled()) {
+      if (bid->IsFilled())
+      {
         bids.pop_front();
       }
-      if (ask->IsFilled()) {
+      if (ask->IsFilled())
+      {
         asks.pop_front();
       }
     }
   }
 }
 
+void Orderbook::ShowOrders()
+{
+  std::cout << "Bids:" << std::endl;
+  for (const auto &[price, orders] : bid_orders)
+  {
+    std::cout << "Price: " << price << ", Orders: ";
+    for (const auto &order : orders)
+    {
+      std::cout << "[ID: " << order->GetId() << ", Quantity: " << order->GetRemainingQuantity() << "] ";
+    }
+    std::cout << std::endl;
+  }
+
+  std::cout << "Asks:" << std::endl;
+  for (const auto &[price, orders] : ask_orders)
+  {
+    std::cout << "Price: " << price << ", Orders: ";
+    for (const auto &order : orders)
+    {
+      std::cout << "[ID: " << order->GetId() << ", Quantity: " << order->GetRemainingQuantity() << "] ";
+    }
+    std::cout << std::endl;
+  }
+}
+
 // TODO: Complete implementation
-Trade Orderbook::MakeTrade(Order::OrderPointer bid, Order::OrderPointer ask) {
-  Order::Quantity q = std::min(bid->GetRemainingQuantity(), ask->GetRemainingQuantity());
+Trade Orderbook::MakeTrade(OrderPointer bid, OrderPointer ask)
+{
+  Quantity q = std::min(bid->GetRemainingQuantity(), ask->GetRemainingQuantity());
   Trade t = Trade(bid, ask, bid->GetType(), trade_id_gen.nextId());
   bid->Fill(q);
   ask->Fill(q);

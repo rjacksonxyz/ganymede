@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc libganymede.a CMakeFiles/ganymede.dir/src/order/order.cpp.o CMakeFiles/ganymede.dir/src/orderbook/orderbook.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib libganymede.a

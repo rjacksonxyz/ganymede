@@ -6,26 +6,29 @@
 #include <list>
 #include <memory>
 
-namespace Order {
 using OrderId = uint64_t;
 using Price = double;
 using Quantity = uint64_t;
-enum class Side {
+enum class Side
+{
   Bid,
   Ask,
 };
 
-class OrderIdGenerator {
+class OrderIdGenerator
+{
 private:
   static std::atomic<uint64_t> counter;
 
 public:
-  static uint64_t generateId() {
+  static uint64_t generateId()
+  {
     return counter.fetch_add(1, std::memory_order_relaxed);
   }
 };
 
-enum class OrderType {
+enum class OrderType
+{
   Market,
   Limit,
   GoodForDay,
@@ -43,7 +46,8 @@ enum class OrderType {
   Iceberg,
 };
 
-class Order {
+class Order
+{
 private:
   OrderId id;
   Side side;
@@ -54,7 +58,8 @@ private:
 
 public:
   Order(Side s, Quantity q, OrderType t, Price p)
-      : side(s), quantity(q), type_(t), price(p) {
+      : side(s), quantity(q), type_(t), price(p)
+  {
     id = OrderIdGenerator::generateId();
     remaining_quantity = quantity;
   }
@@ -64,13 +69,11 @@ public:
   uint64_t GetRemainingQuantity() const { return remaining_quantity; }
   OrderType GetType() const { return type_; }
   Price GetPrice() const { return price; }
-  void SetPrice(Price p) {price = p;}
+  void SetPrice(Price p) { price = p; }
   void Fill(Quantity q);
-  bool IsFilled() const {return remaining_quantity == 0;}
+  bool IsFilled() const { return remaining_quantity == 0; }
 };
 
 using OrderPointer = std::shared_ptr<Order>;
-using OrderPointers = std::list<OrderPointer>;
-
-} // namespace Order
+using OrderPointers = std::list<OrderPointer>; // namespace Order
 #endif
