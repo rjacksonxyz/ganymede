@@ -1,8 +1,10 @@
 #include "orderbook.hpp"
 #include <iterator>
+#include <mutex>
 
 int Orderbook::AddOrder(OrderPointer o)
 {
+  std::scoped_lock ordersLock{mutex_};
   auto price = o->GetPrice();
 
   // TODO: Market Order Support
@@ -138,6 +140,7 @@ void Orderbook::MatchOrders()
 
 void Orderbook::ShowOrders()
 {
+  std::scoped_lock orderLock{mutex_};
   std::cout << "Bids:" << std::endl;
   if (bid_orders.empty())
     std::cout << "[NONE]" << std::endl;
@@ -148,7 +151,9 @@ void Orderbook::ShowOrders()
       std::cout << "Price: " << price << ", Orders: ";
       for (const auto &order : orders)
       {
-        std::cout << "[ID: " << order->GetId() << ", Quantity: " << order->GetRemainingQuantity() << "] ";
+        std::cout << "[ID: " << order->GetId()
+                  << ", Requested Quantity: " << order->GetQuantity()
+                  << ", Remaining Quantity: " << order->GetRemainingQuantity() << "] ";
       }
       std::cout << std::endl;
     }
@@ -164,7 +169,8 @@ void Orderbook::ShowOrders()
       std::cout << "Price: " << price << ", Orders: ";
       for (const auto &order : orders)
       {
-        std::cout << "[ID: " << order->GetId() << ", Quantity: " << order->GetRemainingQuantity() << "] ";
+        std::cout << "[ID: " << order->GetId()
+                  << ", Quantity: " << order->GetRemainingQuantity() << "] ";
       }
       std::cout << std::endl;
     }
@@ -174,7 +180,8 @@ void Orderbook::ShowOrders()
 // TODO: Complete implementation
 Trade Orderbook::MakeTrade(OrderPointer bid, OrderPointer ask)
 {
-  Quantity q = std::min(bid->GetRemainingQuantity(), ask->GetRemainingQuantity());
+  Quantity q =
+      std::min(bid->GetRemainingQuantity(), ask->GetRemainingQuantity());
   Trade t = Trade(bid, ask, q, bid->GetPrice(), trade_id_gen.nextId());
   bid->Fill(q);
   ask->Fill(q);
