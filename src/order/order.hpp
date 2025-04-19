@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <list>
 #include <memory>
+#include <iostream>
 
 using OrderId = uint64_t;
 using Price = double;
@@ -58,12 +59,25 @@ private:
   Price price;
 
 public:
+  /*
+   Constructor
+   @param s: Side of the order
+   @param q: Quantity of the order
+   @param t: Type of the order
+   @param p: Price of the order
+  */
   Order(Side s, Quantity q, OrderType t, Price p)
       : side(s), quantity(q), type_(t), price(p)
   {
     id = OrderIdGenerator::generateId();
     remaining_quantity = quantity;
   }
+  ~Order() = default;
+  Order(const Order &) = default;
+  Order(Order &&) = default;
+  Order &operator=(const Order &) = default;
+  Order &operator=(Order &&) = default;
+
   OrderId GetId() const { return id; }
   Side GetSide() const { return side; }
   uint64_t GetQuantity() const { return quantity; }

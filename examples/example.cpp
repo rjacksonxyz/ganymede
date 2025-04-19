@@ -2,7 +2,8 @@
 
 int main()
 {
-    Orderbook ob = Orderbook(); // Generate 10 bid orders
+    Orderbook ob = Orderbook();
+    // Generate 10 bid orders
     for (int i = 0; i < 10; ++i)
     {
         auto op = std::make_shared<Order>(Side::Bid, 70 + i, OrderType::Limit, 60.50 - i * 0.10);
