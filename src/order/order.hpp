@@ -64,6 +64,9 @@ public:
   uint64_t GetRemainingQuantity() const { return remaining_quantity; }
   OrderType GetType() const { return type_; }
   Price GetPrice() const { return price; }
+  void SetPrice(Price p) {price = p;}
+  void Fill(Quantity q);
+  bool IsFilled() const {return remaining_quantity == 0;}
 };
 
 using OrderPointer = std::shared_ptr<Order>;

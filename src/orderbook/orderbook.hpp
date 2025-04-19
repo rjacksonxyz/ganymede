@@ -1,12 +1,13 @@
 #include "../order/order.hpp"
 #include "../trade/trade.hpp"
+#include "../snowflake/snowflake.hpp"
 
 #include <functional>
 #include <map>
 #include <mutex>
 #include <queue>
 
-class OrderBook {
+class Orderbook {
 private:
   // bid_orders holds all the orders on the bid side of the order book 
   // of a limit type
@@ -22,10 +23,21 @@ private:
   std::queue<Order::OrderPointer> market_buy_orders;
   std::queue<Order::OrderPointer> market_sell_orders;
   mutable std::mutex mutex_;
+  std::thread marketOrdersPruneThread_;
+  SnowflakeGenerator trade_id_gen;
+ 
 
 public:
+  Orderbook() : trade_id_gen(SnowflakeGenerator(0)) {
+    bid_orders = {};
+    ask_orders = {};
+    market_buy_orders = {};
+    market_sell_orders = {};
+  }
   int AddOrder(Order::OrderPointer order);
   int CancelOrder(Order::OrderId id);
   int HandleMarketOrder(Order::OrderPointer order);
+  int HandleLimitOrder(Order::OrderPointer order);
+  void MatchOrders();
   Trade MakeTrade(Order::OrderPointer o1, Order::OrderPointer o2);
 };

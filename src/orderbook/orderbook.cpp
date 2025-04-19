@@ -1,43 +1,82 @@
 #include "orderbook.hpp"
+#include <iostream>
 
-int OrderBook::AddOrder(Order::OrderPointer o) {
+int Orderbook::AddOrder(Order::OrderPointer o) {
   auto price = o->GetPrice();
 
   // TODO: Market Order Support
-  if (o->GetType() == Order::OrderType::Market) {
+  Order::OrderType type_ = o->GetType();
+  Order::Side side_ = o->GetSide();
+
+  switch (type_) {
+    case Order::OrderType::Market:
+      HandleMarketOrder(o);
+      break;
+    case Order::OrderType::Limit:
+      HandleLimitOrder(o);
+      break;
+    default:
+      // TODO: Stop Order Support
+      // TODO: Iceberg Order Support
+      // TODO: Pegged Order Support
+      // TODO: Trailing Stop Order Support
+      // TODO: Fill or Kill Order Support
+      std::cout << (int)type_ << " order type not supported" << '\n';
   }
-  // TODO: Limit Order Support
-  // TODO: Stop Order Support
-  // TODO: Iceberg Order Support
-  // TODO: Pegged Order Support
-  // TODO: Trailing Stop Order Support
-  // TODO: Fill or Kill Order Support
-  if (o->GetSide() == Order::Side::Bid) {
-    bid_orders[price].push_back(o);
-  } else {
-    ask_orders[price].push_back(o);
-  }
+  MatchOrders();
   return 0;
 }
 
 // TODO: Complete implemtation.
-int OrderBook::HandleMarketOrder(Order::OrderPointer o) {
+int Orderbook::HandleMarketOrder(Order::OrderPointer o) {
   Order::Side side = o->GetSide();
-  if (side == Order::Side::Bid) {
-    if (!ask_orders.empty())
-      const auto&[lowest_ask, id] = *(ask_orders.rbegin());
-    else 
-      market_buy_orders.push(o);
-  }
-  else {
-    if (!bid_orders.empty())
-      const auto&[highest_bid, _] = *(bid_orders.begin());
-    else
-      market_sell_orders.push(o);
-  }
-
+  if (side == Order::Side::Bid)
+    market_buy_orders.push(o);
+  else 
+    market_sell_orders.push(o);
+  return 0;
 }
+
+int Orderbook::HandleLimitOrder(Order::OrderPointer o) {
+  Order::Side side = o->GetSide();
+  if (side == Order::Side::Bid)
+    bid_orders[o->GetPrice()].push_back(o);
+  else 
+    ask_orders[o->GetPrice()].push_back(o);
+  return 0;
+}
+
+
+void Orderbook::MatchOrders() {
+  // retrieve the highest bids and lowest asks
+  std::vector<Trade> trades;
+  while (true) {
+    if (bid_orders.empty() || ask_orders.empty())
+      break;
+    
+    auto& [bidPrice, bids] = *bid_orders.begin();
+    auto& [askPrice, asks] = *ask_orders.begin();
+    if (bidPrice < askPrice)
+      break;
+    while (!bids.empty() && !asks.empty()){
+      auto bid = bids.front();
+      auto ask = asks.front();
+      auto trade = MakeTrade(bid, ask);
+      trades.push_back(trade);
+      if (bid->IsFilled()) {
+        bids.pop_front();
+      }
+      if (ask->IsFilled()) {
+        asks.pop_front();
+      }
+    }
+  }
+}
+
 // TODO: Complete implementation
-Trade OrderBook::MakeTrade(Order::OrderPointer o1, Order::OrderPointer o2) {
-  return;
+Trade Orderbook::MakeTrade(Order::OrderPointer bid, Order::OrderPointer ask) {
+  Order::Quantity q = std::min(bid->GetRemainingQuantity(), ask->GetRemainingQuantity());
+  Trade t = Trade(bid, ask, bid->GetType(), trade_id_gen.nextId());
+  bid->Fill(q);
+  ask->Fill(q);
 }
