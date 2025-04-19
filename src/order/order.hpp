@@ -85,6 +85,10 @@ public:
   OrderType GetType() const { return type_; }
   Price GetPrice() const { return price; }
   void SetPrice(Price p) { price = p; }
+  /*
+  * Reduces remaining_quantity by Quantity q
+  * @param q Quantity of instrument
+  */
   void Fill(Quantity q);
   bool IsFilled() const { return remaining_quantity == 0; }
 };
