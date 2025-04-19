@@ -50,6 +50,7 @@ int Orderbook::HandleLimitOrder(OrderPointer o)
   return 0;
 }
 
+// TODO: Fix the bug where this runs indefinitely
 void Orderbook::MatchOrders()
 {
   // retrieve the highest bids and lowest asks
@@ -67,7 +68,8 @@ void Orderbook::MatchOrders()
     {
       auto bid = bids.front();
       auto ask = asks.front();
-      auto trade = MakeTrade(bid, ask);
+      Trade trade = MakeTrade(bid, ask);
+      std::cout << trade << std::endl;
       trades.push_back(trade);
       if (bid->IsFilled())
       {
@@ -77,6 +79,12 @@ void Orderbook::MatchOrders()
       {
         asks.pop_front();
       }
+      // delete price level if list is empty
+      if (bids.empty())
+        bid_orders.erase(bidPrice);
+      if (asks.empty())
+        ask_orders.erase(askPrice);
+      std::cout << "Orders matched" << std::endl;
     }
   }
 }
@@ -113,4 +121,5 @@ Trade Orderbook::MakeTrade(OrderPointer bid, OrderPointer ask)
   Trade t = Trade(bid, ask, bid->GetType(), trade_id_gen.nextId());
   bid->Fill(q);
   ask->Fill(q);
+  return t;
 }

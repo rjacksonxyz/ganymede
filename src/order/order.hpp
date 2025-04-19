@@ -1,3 +1,4 @@
+#pragma once
 #ifndef GYMD_ORDER
 #define GYMD_ORDER
 
@@ -18,7 +19,7 @@ enum class Side
 class OrderIdGenerator
 {
 private:
-  static std::atomic<uint64_t> counter;
+  static inline std::atomic<uint64_t> counter{0};
 
 public:
   static uint64_t generateId()
@@ -73,7 +74,6 @@ public:
   void Fill(Quantity q);
   bool IsFilled() const { return remaining_quantity == 0; }
 };
-
 using OrderPointer = std::shared_ptr<Order>;
-using OrderPointers = std::list<OrderPointer>; // namespace Order
+using OrderPointers = std::list<OrderPointer>;
 #endif

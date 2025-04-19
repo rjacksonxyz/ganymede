@@ -1,8 +1,12 @@
+#pragma once
+#ifndef GNYD_TRADE
+#define GNYD_TRADE
 #include "../order/order.hpp"
 #include <chrono>
 #include <random>
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 #include "../snowflake/snowflake.hpp"
 
 class Trade
@@ -24,5 +28,13 @@ public:
           id(trade_id)
     {
         quantity = bid->GetQuantity() > ask->GetQuantity() ? bid->GetQuantity() : ask->GetQuantity();
+        price = bid->GetPrice();
+    }
+    // define an operator to print the trade
+    friend std::ostream &operator<<(std::ostream &os, const Trade &t)
+    {
+        os << "Trade ID: " << t.id << ", Quantity: " << t.quantity << ", Price: " << t.price << ", Timestamp: " << t.timestamp.count() << '\n';
+        return os;
     }
 };
+#endif

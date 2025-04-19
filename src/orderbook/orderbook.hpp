@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../order/order.hpp"
 #include "../trade/trade.hpp"
 #include "../snowflake/snowflake.hpp"

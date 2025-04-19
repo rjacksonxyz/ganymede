@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SNOWFLAKE_HPP
 #define SNOWFLAKE_HPP
 
