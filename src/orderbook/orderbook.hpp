@@ -54,5 +54,4 @@ public:
   OrderPointers::iterator HandleLimitOrder(OrderPointer order);
   void ShowOrders();
   void MatchOrders();
-  Trade MakeTrade(OrderPointer o1, OrderPointer o2);
 };

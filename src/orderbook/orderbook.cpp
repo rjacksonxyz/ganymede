@@ -6,6 +6,7 @@
 int Orderbook::AddOrder(OrderPointer o) {
   std::scoped_lock ordersLock{mutex_};
   auto price = o->GetPrice();
+  o->SetId();
 
   // TODO: Market Order Support
   OrderType type_ = o->GetType();
@@ -86,7 +87,6 @@ OrderPointers::iterator Orderbook::HandleLimitOrder(OrderPointer o) {
   return iterator;
 }
 
-// TODO: Fix the bug where this runs indefinitely
 void Orderbook::MatchOrders() {
   // retrieve the highest bids and lowest asks
   std::vector<Trade> trades;
@@ -107,22 +107,31 @@ void Orderbook::MatchOrders() {
       if (market_bid != NULL) {
         // match market bid
         auto ask = asks.front();
-        trade = MakeTrade(market_bid, ask);
+        trade = Trade::MakeTrade(market_bid, ask, trade_id_gen.nextId());
         asks.pop_front();
+        if (ask->IsFilled()) {
+          asks.pop_front();
+        }
       }
       if (market_ask != NULL) {
         auto bid = bids.front();
-        trade = MakeTrade(bid, market_ask);
+        trade = Trade::MakeTrade(bid, market_ask, trade_id_gen.nextId());
+        if (bid->IsFilled()) {
+          bids.pop_front();
+        }
       }
       trades.push_back(trade);
+      continue;
     }
     if (bidPrice < askPrice) {
       break;
     }
+
+    // process limit orders
     while (!bids.empty() && !asks.empty()) {
       auto bid = bids.front();
       auto ask = asks.front();
-      Trade trade = MakeTrade(bid, ask);
+      Trade trade = Trade::MakeTrade(bid, ask, trade_id_gen.nextId());
       std::cout << trade << std::endl;
       trades.push_back(trade);
       if (bid->IsFilled()) {
@@ -171,14 +180,4 @@ void Orderbook::ShowOrders() {
       std::cout << std::endl;
     }
   }
-}
-
-// TODO: Complete implementation
-Trade Orderbook::MakeTrade(OrderPointer bid, OrderPointer ask) {
-  Quantity q =
-      std::min(bid->GetRemainingQuantity(), ask->GetRemainingQuantity());
-  Trade t = Trade(bid, ask, q, bid->GetPrice(), trade_id_gen.nextId());
-  bid->Fill(q);
-  ask->Fill(q);
-  return t;
 }

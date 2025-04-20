@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #ifndef GNYD_TRADE
 #define GNYD_TRADE
 #include "../order/order.hpp"
@@ -36,6 +37,21 @@ public:
       id = other.id;
     }
     return *this;
+  }
+  static Trade MakeTrade(OrderPointer bid, OrderPointer ask, int64_t trade_id) {
+    Quantity q =
+        std::min(bid->GetRemainingQuantity(), ask->GetRemainingQuantity());
+    auto &priority_side =
+        (bid->GetTimestamp() > ask->GetTimestamp()) ? ask : bid;
+    std::cout << "priority_side: "
+              << ((priority_side->GetTimestamp() == bid->GetTimestamp())
+                      ? "bid"
+                      : "ask")
+              << '\n';
+    Trade t = Trade(bid, ask, q, priority_side->GetPrice(), trade_id);
+    bid->Fill(q);
+    ask->Fill(q);
+    return t;
   }
   friend std::ostream &operator<<(std::ostream &os, const Trade &t) {
     os << "Trade ID: " << t.id << ", Bid ID: " << t.bid_id
