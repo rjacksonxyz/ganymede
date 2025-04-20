@@ -1,9 +1,9 @@
 #include "orderbook.hpp"
+#include <cstddef>
 #include <iterator>
 #include <mutex>
 
-int Orderbook::AddOrder(OrderPointer o)
-{
+int Orderbook::AddOrder(OrderPointer o) {
   std::scoped_lock ordersLock{mutex_};
   auto price = o->GetPrice();
 
@@ -17,8 +17,7 @@ int Orderbook::AddOrder(OrderPointer o)
   // TODO: Pegged Order Support
   // TODO: Trailing Stop Order Support
   // TODO: Fill or Kill Order Support
-  switch (type_)
-  {
+  switch (type_) {
   case OrderType::Market:
     HandleMarketOrder(o);
     break;
@@ -33,31 +32,26 @@ int Orderbook::AddOrder(OrderPointer o)
   return 0;
 }
 
-void Orderbook::CancelOrder(OrderId orderId)
-{
+void Orderbook::CancelOrder(OrderId orderId) {
   std::scoped_lock ordersLock{mutex_};
 
   CancelOrderInternal(orderId);
 }
 
-void Orderbook::CancelOrderInternal(OrderId orderId)
-{
+void Orderbook::CancelOrderInternal(OrderId orderId) {
   if (orders_.find(orderId) == orders_.end())
     return;
 
   const auto [order, iterator] = orders_.at(orderId);
   orders_.erase(orderId);
 
-  if (order->GetSide() == Side::Ask)
-  {
+  if (order->GetSide() == Side::Ask) {
     auto price = order->GetPrice();
     auto &orders = ask_orders.at(price);
     orders.erase(iterator);
     if (orders.empty())
       ask_orders.erase(price);
-  }
-  else
-  {
+  } else {
     auto price = order->GetPrice();
     auto &orders = bid_orders.at(price);
     orders.erase(iterator);
@@ -67,29 +61,24 @@ void Orderbook::CancelOrderInternal(OrderId orderId)
 }
 
 // TODO: Complete implemtation.
-int Orderbook::HandleMarketOrder(OrderPointer o)
-{
+int Orderbook::HandleMarketOrder(OrderPointer o) {
   OrderPointers::iterator iterator;
   Side side = o->GetSide();
   if (side == Side::Bid)
-    market_buy_orders.push(o);
+    market_bid_orders.push(o);
   else
-    market_sell_orders.push(o);
+    market_ask_orders.push(o);
   return 0;
 }
 
-OrderPointers::iterator Orderbook::HandleLimitOrder(OrderPointer o)
-{
+OrderPointers::iterator Orderbook::HandleLimitOrder(OrderPointer o) {
   OrderPointers::iterator iterator;
   Side side = o->GetSide();
-  if (side == Side::Bid)
-  {
+  if (side == Side::Bid) {
     OrderPointers &bids = bid_orders[o->GetPrice()];
     bids.push_back(o);
     iterator = std::prev(bids.end());
-  }
-  else
-  {
+  } else {
     OrderPointers &asks = ask_orders[o->GetPrice()];
     asks.push_back(o);
     iterator = std::prev(asks.end());
@@ -98,35 +87,48 @@ OrderPointers::iterator Orderbook::HandleLimitOrder(OrderPointer o)
 }
 
 // TODO: Fix the bug where this runs indefinitely
-void Orderbook::MatchOrders()
-{
+void Orderbook::MatchOrders() {
   // retrieve the highest bids and lowest asks
   std::vector<Trade> trades;
-  while (true)
-  {
-    // sleep for 500 milliseconds
+  while (true) {
+    // check if there are any orders
     if (bid_orders.empty() || ask_orders.empty())
       break;
 
     auto &[bidPrice, bids] = *bid_orders.begin();
     auto &[askPrice, asks] = *ask_orders.begin();
-    if (bidPrice < askPrice)
-    {
+    // process market orders first (execute at any price avaialbe)
+    while (!market_bid_orders.empty() || !market_ask_orders.empty()) {
+      auto market_bid =
+          !market_bid_orders.empty() ? market_bid_orders.front() : NULL;
+      auto market_ask =
+          !market_ask_orders.empty() ? market_ask_orders.front() : NULL;
+      Trade trade;
+      if (market_bid != NULL) {
+        // match market bid
+        auto ask = asks.front();
+        trade = MakeTrade(market_bid, ask);
+        asks.pop_front();
+      }
+      if (market_ask != NULL) {
+        auto bid = bids.front();
+        trade = MakeTrade(bid, market_ask);
+      }
+      trades.push_back(trade);
+    }
+    if (bidPrice < askPrice) {
       break;
     }
-    while (!bids.empty() && !asks.empty())
-    {
+    while (!bids.empty() && !asks.empty()) {
       auto bid = bids.front();
       auto ask = asks.front();
       Trade trade = MakeTrade(bid, ask);
       std::cout << trade << std::endl;
       trades.push_back(trade);
-      if (bid->IsFilled())
-      {
+      if (bid->IsFilled()) {
         bids.pop_front();
       }
-      if (ask->IsFilled())
-      {
+      if (ask->IsFilled()) {
         asks.pop_front();
       }
       // delete price level if list is empty
@@ -138,22 +140,19 @@ void Orderbook::MatchOrders()
   }
 }
 
-void Orderbook::ShowOrders()
-{
+void Orderbook::ShowOrders() {
   std::scoped_lock orderLock{mutex_};
   std::cout << "Bids:" << std::endl;
   if (bid_orders.empty())
     std::cout << "[NONE]" << std::endl;
-  else
-  {
-    for (const auto &[price, orders] : bid_orders)
-    {
+  else {
+    for (const auto &[price, orders] : bid_orders) {
       std::cout << "Price: " << price << ", Orders: ";
-      for (const auto &order : orders)
-      {
+      for (const auto &order : orders) {
         std::cout << "[ID: " << order->GetId()
                   << ", Requested Quantity: " << order->GetQuantity()
-                  << ", Remaining Quantity: " << order->GetRemainingQuantity() << "] ";
+                  << ", Remaining Quantity: " << order->GetRemainingQuantity()
+                  << "] ";
       }
       std::cout << std::endl;
     }
@@ -162,13 +161,10 @@ void Orderbook::ShowOrders()
   std::cout << "Asks:" << std::endl;
   if (ask_orders.empty())
     std::cout << "[NONE]" << std::endl;
-  else
-  {
-    for (const auto &[price, orders] : ask_orders)
-    {
+  else {
+    for (const auto &[price, orders] : ask_orders) {
       std::cout << "Price: " << price << ", Orders: ";
-      for (const auto &order : orders)
-      {
+      for (const auto &order : orders) {
         std::cout << "[ID: " << order->GetId()
                   << ", Quantity: " << order->GetRemainingQuantity() << "] ";
       }
@@ -178,8 +174,7 @@ void Orderbook::ShowOrders()
 }
 
 // TODO: Complete implementation
-Trade Orderbook::MakeTrade(OrderPointer bid, OrderPointer ask)
-{
+Trade Orderbook::MakeTrade(OrderPointer bid, OrderPointer ask) {
   Quantity q =
       std::min(bid->GetRemainingQuantity(), ask->GetRemainingQuantity());
   Trade t = Trade(bid, ask, q, bid->GetPrice(), trade_id_gen.nextId());
