@@ -175,7 +175,9 @@ void Orderbook::ShowOrders() {
       std::cout << "Price: " << price << ", Orders: ";
       for (const auto &order : orders) {
         std::cout << "[ID: " << order->GetId()
-                  << ", Quantity: " << order->GetRemainingQuantity() << "] ";
+                  << ", Requested Quantity: " << order->GetQuantity()
+                  << ", Remaining Quantity: " << order->GetRemainingQuantity()
+                  << "] ";
       }
       std::cout << std::endl;
     }
