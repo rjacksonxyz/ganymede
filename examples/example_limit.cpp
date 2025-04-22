@@ -1,15 +1,18 @@
 #include "../src/orderbook/orderbook.hpp"
+#include <benchmark/benchmark.h>
 
 void makeBids(Orderbook &ob);
 void makeAsks(Orderbook &ob);
+static void limitOrderTest(benchmark::State &s);
 
-int main() {
-  Orderbook ob = Orderbook();
-  std::thread bid_thread(makeBids, std::ref(ob));
-  std::thread ask_thread(makeAsks, std::ref(ob));
-  bid_thread.join();
-  ask_thread.join();
-  ob.ShowOrders();
+static void limitOrderTest(benchmark::State &s) {
+  for (auto _ : s) {
+    Orderbook ob = Orderbook();
+    std::thread bid_thread(makeBids, std::ref(ob));
+    std::thread ask_thread(makeAsks, std::ref(ob));
+    bid_thread.join();
+    ask_thread.join();
+  }
 }
 
 void makeAsks(Orderbook &ob) {
@@ -33,3 +36,7 @@ void makeBids(Orderbook &ob) {
     ob.AddOrder(op2);
   }
 }
+
+BENCHMARK(limitOrderTest);
+
+BENCHMARK_MAIN();

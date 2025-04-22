@@ -38,15 +38,41 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Find Google Benchmark
+# Help CMake find Google Benchmark
+list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/cmake/benchmark")
+find_package(benchmark REQUIRED)
+find_package(benchmark REQUIRED CONFIG)
+if(NOT benchmark_FOUND)
+    message(FATAL_ERROR "Google Benchmark not found. Please install it or specify its location.")
+endif()
+
 # Add example executable
-add_executable(example examples/example.cpp)
-target_link_libraries(example 
+add_executable(example_limit examples/example_limit.cpp)
+target_link_libraries(example_limit 
     PRIVATE 
         ${PROJECT_NAME}
+		benchmark::benchmark
+        Threads::Threads
 )
 
 # Set include directories for the example
-target_include_directories(example
+target_include_directories(example_limit
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+# Add example executable
+add_executable(example_market examples/example_market.cpp)
+target_link_libraries(example_market 
+    PRIVATE 
+        ${PROJECT_NAME}
+		benchmark::benchmark
+        Threads::Threads
+)
+
+# Set include directories for the example
+target_include_directories(example_market
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )

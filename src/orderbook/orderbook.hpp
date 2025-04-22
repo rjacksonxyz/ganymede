@@ -33,8 +33,8 @@ private:
   Price last_price;
   // market_buy_orders holds all the orders on the bid side of the order book
   // of a market type that were not filled immediately.
-  std::queue<OrderPointer> market_bid_orders;
-  std::queue<OrderPointer> market_ask_orders;
+  std::list<OrderPointer> market_bid_orders;
+  std::list<OrderPointer> market_ask_orders;
   std::thread marketOrdersPruneThread_;
   SnowflakeGenerator trade_id_gen;
 
@@ -50,7 +50,7 @@ public:
   int AddOrder(OrderPointer order);
   void CancelOrder(OrderId id);
   void CancelOrderInternal(OrderId orderId);
-  int HandleMarketOrder(OrderPointer order);
+  OrderPointers::iterator HandleMarketOrder(OrderPointer order);
   OrderPointers::iterator HandleLimitOrder(OrderPointer order);
   void ShowOrders();
   void MatchOrders();

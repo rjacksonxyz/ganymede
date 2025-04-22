@@ -1,6 +1,13 @@
 #include "order.hpp"
 #include <iostream>
-void Order::Order::Fill(Quantity q)
+void Order::Fill(Quantity q)
 {
-    remaining_quantity -= q > quantity ? quantity : q;
+    if (q > remaining_quantity)
+    {
+        remaining_quantity = 0;
+    }
+    else
+    {
+        remaining_quantity -= q;
+    }
 }
