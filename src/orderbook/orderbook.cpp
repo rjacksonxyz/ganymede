@@ -135,12 +135,9 @@ void Orderbook::MatchOrders()
         // Use structured binding for asks with proper scoping
         auto &[askPrice, asks] = *ask_orders.begin();
         auto ask = asks.front();
-        std::cout << "ask remaining quantity: " << ask->GetRemainingQuantity() << '\n';
         trade = Trade::MakeMktTrade(market_bid, ask, trade_id_gen.nextId());
-        std::cout << "ask remaining quantity: " << ask->GetRemainingQuantity() << '\n';
         if (ask->IsFilled())
         {
-          std::cout << "ask filled" << '\n';
           asks.pop_front();
           if (asks.empty())
           {
@@ -151,9 +148,8 @@ void Orderbook::MatchOrders()
         {
           market_bid_orders.pop_front();
         }
-        std::cout << "trade made" << '\n';
-        std::cout << trade << std::endl;
         trades.push_back(trade);
+        std::cout << trade << std::endl;
       }
 
       if (market_ask != nullptr && !bid_orders.empty())
@@ -175,9 +171,8 @@ void Orderbook::MatchOrders()
         {
           market_ask_orders.pop_front();
         }
-        std::cout << "trade made" << '\n';
-        std::cout << trade << std::endl;
         trades.push_back(trade);
+        std::cout << trade << std::endl;
       }
       break;
     }
@@ -196,13 +191,12 @@ void Orderbook::MatchOrders()
     }
 
     // process limit orders
-    std::cout << "processing limit orders" << '\n';
     while (!bids.empty() && !asks.empty())
     {
       auto bid = bids.front();
       auto ask = asks.front();
       Trade trade = Trade::MakeTrade(bid, ask, trade_id_gen.nextId());
-      // std::cout << trade << std::endl;
+      std::cout << trade << std::endl;
       trades.push_back(trade);
       if (bid->IsFilled())
       {

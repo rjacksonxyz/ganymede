@@ -47,35 +47,43 @@ if(NOT benchmark_FOUND)
     message(FATAL_ERROR "Google Benchmark not found. Please install it or specify its location.")
 endif()
 
-# Add example executable
+# Build examples
 add_executable(example_limit examples/example_limit.cpp)
-target_link_libraries(example_limit 
-    PRIVATE 
-        ${PROJECT_NAME}
-		benchmark::benchmark
-        Threads::Threads
-)
-
-# Set include directories for the example
-target_include_directories(example_limit
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-# Add example executable
 add_executable(example_market examples/example_market.cpp)
-target_link_libraries(example_market 
-    PRIVATE 
-        ${PROJECT_NAME}
-		benchmark::benchmark
-        Threads::Threads
-)
+set(EXAMPLE_TARGETS example_limit example_market)
+foreach(TARGET ${EXAMPLE_TARGETS})
+    target_link_libraries(${TARGET} 
+        PRIVATE 
+            ${PROJECT_NAME}
+            benchmark::benchmark
+            Threads::Threads
+    )
+    
+    # Set include directories for all examples
+    target_include_directories(${TARGET}
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+endforeach()
 
-# Set include directories for the example
-target_include_directories(example_market
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+# Build benchmarks
+add_executable(benchmark_limit benchmarks/benchmark_limit.cpp)
+set(EXAMPLE_TARGETS benchmark_limit)
+foreach(TARGET ${EXAMPLE_TARGETS})
+    target_link_libraries(${TARGET} 
+        PRIVATE 
+            ${PROJECT_NAME}
+            benchmark::benchmark
+            Threads::Threads
+    )
+    
+    # Set include directories for all examples
+    target_include_directories(${TARGET}
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+endforeach()
+
 
 # Option for building tests
 option(BUILD_TESTS "Build the tests" OFF)
