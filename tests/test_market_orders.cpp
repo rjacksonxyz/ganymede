@@ -19,7 +19,7 @@ protected:
     Orderbook ob;
 
 public:
-    void makeBids()
+    void makeMarketBids()
     {
         for (int i = 0; i < ORDER_N; ++i)
         {
@@ -30,7 +30,32 @@ public:
         }
     }
 
-    void makeAsks()
+    void makeLimitBids()
+    {
+        for (int i = 0; i < ORDER_N; ++i)
+        {
+            Quantity q = 70 + i;
+            Price p = 59.50 + i * 0.10;
+            auto op1 = std::make_shared<Order>(Side::Bid, q, OrderType::Limit, p);
+            ob.AddOrder(op1);
+            bidQuantity += q;
+        }
+    }
+
+    void makeMarketAsks()
+    {
+        for (int i = 0; i < ORDER_N / 2; ++i)
+        {
+            Quantity q = 35 + i;
+            auto op1 = std::make_shared<Order>(Side::Ask, q, OrderType::Market, 0);
+            ob.AddOrder(op1);
+            auto op2 = std::make_shared<Order>(Side::Ask, q, OrderType::Market, 0);
+            ob.AddOrder(op2);
+            askQuantity += q * 2;
+        }
+    }
+
+    void makeLimitAsks()
     {
         for (int i = 0; i < ORDER_N / 2; ++i)
         {
@@ -45,18 +70,36 @@ public:
     }
 };
 
-TEST_F(OrderbookMarketOrderTest, MarketOrdersMatchCorrectly)
+TEST_F(OrderbookMarketOrderTest, MarketBidOrdersMatchCorrectly)
 {
     // Create bid orders
-    std::thread bid_thread(&OrderbookMarketOrderTest::makeBids, this);
+    std::thread bid_thread(&OrderbookMarketOrderTest::makeMarketBids, this);
     bid_thread.join();
 
     // Show the orderbook state after bids
     ob.ShowOrders();
 
     // Create ask orders
-    std::thread ask_thread(&OrderbookMarketOrderTest::makeAsks, this);
+    std::thread ask_thread(&OrderbookMarketOrderTest::makeLimitAsks, this);
     ask_thread.join();
+
+    // Verify traded quantity matches expectations
+    int expectedTradedQuantity = std::min(askQuantity, bidQuantity);
+    EXPECT_EQ(ob.GetTradeVolume(), expectedTradedQuantity);
+}
+
+TEST_F(OrderbookMarketOrderTest, MarketAskOrdersMatchCorrectly)
+{
+    // Create ask orders
+    std::thread ask_thread(&OrderbookMarketOrderTest::makeMarketAsks, this);
+    ask_thread.join();
+
+    // Show the orderbook state after asks
+    ob.ShowOrders();
+
+    // Create bid orders
+    std::thread bid_thread(&OrderbookMarketOrderTest::makeLimitBids, this);
+    bid_thread.join();
 
     // Verify traded quantity matches expectations
     int expectedTradedQuantity = std::min(askQuantity, bidQuantity);

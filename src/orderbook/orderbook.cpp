@@ -202,7 +202,7 @@ void Orderbook::MatchMarketOrders(OrderPointer market_order, BidOrders &non_mark
   }
   if (market_order->IsFilled())
   {
-    market_bid_orders.pop_front();
+    market_ask_orders.pop_front();
   }
   trades.push_back(trade);
   std::cout << trade << std::endl;
