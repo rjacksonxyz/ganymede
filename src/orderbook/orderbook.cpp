@@ -8,8 +8,6 @@ int Orderbook::AddOrder(OrderPointer o)
   std::scoped_lock ordersLock{mutex_};
   auto price = o->GetPrice();
   o->SetId();
-
-  // TODO: Market Order Support
   OrderType type_ = o->GetType();
   Side side_ = o->GetSide();
   OrderPointers::iterator order_location;
