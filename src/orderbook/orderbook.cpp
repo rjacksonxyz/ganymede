@@ -144,6 +144,7 @@ void Orderbook::MatchOrders()
       auto bid = bids.front();
       auto ask = asks.front();
       Trade trade = Trade::MakeTrade(bid, ask, trade_id_gen.nextId());
+      // TODO: remove this after limit order tests are complete
       std::cout << trade << std::endl;
       trades.push_back(trade);
       if (bid->IsFilled())
@@ -181,7 +182,6 @@ void Orderbook::MatchMarketOrders(OrderPointer market_bid_order, AskOrders &non_
     market_bid_orders.pop_front();
   }
   trades.push_back(trade);
-  std::cout << trade << std::endl;
   return;
 }
 
@@ -203,7 +203,6 @@ void Orderbook::MatchMarketOrders(OrderPointer market_ask_order, BidOrders &non_
     market_ask_orders.pop_front();
   }
   trades.push_back(trade);
-  std::cout << trade << std::endl;
   return;
 }
 

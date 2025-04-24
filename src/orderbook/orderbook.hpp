@@ -64,8 +64,8 @@ public:
   OrderPointers::iterator HandleLimitOrder(OrderPointer order);
   void ShowOrders();
   void MatchOrders();
-  void MatchMarketOrders(OrderPointer market_order, OrderMap<std::less<Price>> &non_market_orders);
-  void MatchMarketOrders(OrderPointer market_order, OrderMap<std::greater<Price>> &non_market_orders);
+  void MatchMarketOrders(OrderPointer market_bid, BidOrders &non_market_orders);
+  void MatchMarketOrders(OrderPointer market_ask, AskOrders &non_market_orders);
   void MatchLimitOrders(Trades &t);
   Quantity GetTradeVolume()
   {
@@ -76,5 +76,10 @@ public:
       trade_volume += trade.GetQuantity();
     }
     return trade_volume;
+  }
+  Trades GetTrades() const
+  {
+    std::scoped_lock lock{mutex_};
+    return trades;
   }
 };
