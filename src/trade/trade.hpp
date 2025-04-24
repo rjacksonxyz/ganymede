@@ -71,5 +71,6 @@ public:
        << '\n';
     return os;
   }
+  Quantity GetQuantity() const { return quantity; }
 };
 #endif

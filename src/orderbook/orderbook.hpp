@@ -4,6 +4,7 @@
 #include "../snowflake/snowflake.hpp"
 #include "../trade/trade.hpp"
 
+#include "../order/order.hpp"
 #include <functional>
 #include <iostream>
 #include <iterator>
@@ -11,11 +12,17 @@
 #include <mutex>
 #include <queue>
 
-class Orderbook {
+class Orderbook
+{
   using Trades = std::vector<Trade>;
+  template <typename Comparator>
+  using OrderMap = std::map<Price, OrderPointers, Comparator>;
+  using AskOrders = OrderMap<std::less<Price>>;
+  using BidOrders = OrderMap<std::greater<Price>>;
 
 private:
-  struct OrderEntry {
+  struct OrderEntry
+  {
     OrderPointer order_{nullptr};
     OrderPointers::iterator location_;
   };
@@ -23,10 +30,10 @@ private:
   std::unordered_map<OrderId, OrderEntry> orders_;
   // bid_orders holds all the orders on the bid side of the order book
   // of a limit type.
-  std::map<Price, OrderPointers, std::greater<Price>> bid_orders;
+  BidOrders bid_orders;
   // ask_orders holds all the orders on the ask side of the order book
   // of a limit type.
-  std::map<Price, OrderPointers, std::less<Price>> ask_orders;
+  AskOrders ask_orders;
 
   // Price at which latest trade was executed.
   // TODO: Update matching logic to update last price of instrument.
@@ -39,11 +46,12 @@ private:
   std::list<OrderPointer> market_ask_orders;
   std::thread marketOrdersPruneThread_;
   SnowflakeGenerator trade_id_gen;
-
+  Trades trades;
   mutable std::mutex mutex_;
 
 public:
-  Orderbook() : trade_id_gen(SnowflakeGenerator(0)) {
+  Orderbook() : trade_id_gen(SnowflakeGenerator(0))
+  {
     bid_orders = {};
     ask_orders = {};
     market_bid_orders = {};
@@ -56,6 +64,16 @@ public:
   OrderPointers::iterator HandleLimitOrder(OrderPointer order);
   void ShowOrders();
   void MatchOrders();
-  void MatchMarketOrders(Trades &t);
+  void MatchMarketOrders(OrderPointer market_order, OrderMap<std::less<Price>> &non_market_orders);
+  void MatchMarketOrders(OrderPointer market_order, OrderMap<std::greater<Price>> &non_market_orders);
   void MatchLimitOrders(Trades &t);
+  Quantity GetTradeVolume()
+  {
+    Quantity trade_volume = 0;
+    for (auto trade : trades)
+    {
+      trade_volume += trade.GetQuantity();
+    }
+    return trade_volume;
+  }
 };

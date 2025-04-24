@@ -4,6 +4,8 @@ void makeBids(Orderbook &ob);
 void makeAsks(Orderbook &ob);
 
 const int ORDER_N = 20;
+int askQuantity = 0;
+int bidQuantity = 0;
 
 int main()
 {
@@ -13,7 +15,9 @@ int main()
   ob.ShowOrders();
   std::thread ask_thread(makeAsks, std::ref(ob));
   ask_thread.join();
-  ob.ShowOrders();
+  int expectedTradedQuantity = std::min(askQuantity, bidQuantity);
+  std::cout << "Expected Traded Quantity: " << expectedTradedQuantity << std::endl;
+  std::cout << "Actual Traded Quantity: " << ob.GetTradeVolume() << std::endl;
 }
 
 void makeAsks(Orderbook &ob)
@@ -26,6 +30,7 @@ void makeAsks(Orderbook &ob)
     ob.AddOrder(op1);
     auto op2 = std::make_shared<Order>(Side::Ask, q, OrderType::Limit, p);
     ob.AddOrder(op2);
+    askQuantity += q * 2;
   }
 }
 
@@ -36,5 +41,6 @@ void makeBids(Orderbook &ob)
     Quantity q = 70 + i;
     auto op1 = std::make_shared<Order>(Side::Bid, q, OrderType::Market, 0);
     ob.AddOrder(op1);
+    bidQuantity += q;
   }
 }

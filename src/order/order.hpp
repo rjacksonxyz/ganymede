@@ -54,8 +54,8 @@ class Order
 private:
   OrderId id;
   Side side;
-  uint64_t quantity;
-  uint64_t remaining_quantity;
+  Quantity quantity;
+  Quantity remaining_quantity;
   OrderType type_;
   Price price;
   int64_t timestamp;
@@ -83,8 +83,8 @@ public:
   OrderId GetId() const { return id; }
   void SetId() { id = OrderIdGenerator::generateId(); }
   Side GetSide() const { return side; }
-  uint64_t GetQuantity() const { return quantity; }
-  uint64_t GetRemainingQuantity() const { return remaining_quantity; }
+  Quantity GetQuantity() const { return quantity; }
+  Quantity GetRemainingQuantity() const { return remaining_quantity; }
   OrderType GetType() const { return type_; }
   int64_t GetTimestamp() const { return timestamp; }
   Price GetPrice() const { return price; }

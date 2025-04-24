@@ -60,6 +60,8 @@
         "thread": "cpp",
         "iostream": "cpp",
         "complex": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "functional": "cpp",
+        "iterator": "cpp"
     }
 }
