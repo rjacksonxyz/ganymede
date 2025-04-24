@@ -114,15 +114,13 @@ void Orderbook::MatchOrders()
       break;
 
     // Process market orders first (execute at any price available)
-    if (!market_bid_orders.empty() && !ask_orders.empty())
+    while (!market_bid_orders.empty() && !ask_orders.empty())
     {
       MatchMarketOrders(market_bid_orders.front(), std::ref(ask_orders));
-      continue;
     }
-    if (!market_ask_orders.empty() && !bid_orders.empty())
+    while (!market_ask_orders.empty() && !bid_orders.empty())
     {
       MatchMarketOrders(market_ask_orders.front(), std::ref(bid_orders));
-      continue;
     }
 
     // For limit orders, check that both orders exist
