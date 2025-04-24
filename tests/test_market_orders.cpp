@@ -7,16 +7,16 @@
 class OrderbookMarketOrderTest : public ::testing::Test
 {
 protected:
+    static const int ORDER_N = 20;
+    int askQuantity = 0;
+    int bidQuantity = 0;
+    Orderbook ob;
+
     void SetUp() override
     {
         askQuantity = 0;
         bidQuantity = 0;
     }
-
-    static const int ORDER_N = 20;
-    int askQuantity = 0;
-    int bidQuantity = 0;
-    Orderbook ob;
 
 public:
     void makeMarketBids()

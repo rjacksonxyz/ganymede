@@ -69,6 +69,7 @@ public:
   void MatchLimitOrders(Trades &t);
   Quantity GetTradeVolume()
   {
+    std::scoped_lock lock{mutex_};
     Quantity trade_volume = 0;
     for (auto trade : trades)
     {
