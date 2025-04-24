@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Find Threads package
+find_package(Threads REQUIRED)
 
 # Define source files for our library
 # Updated to reflect the new directory structure
@@ -47,6 +49,18 @@ if(NOT benchmark_FOUND)
     message(FATAL_ERROR "Google Benchmark not found. Please install it or specify its location.")
 endif()
 
+# Enable testing
+enable_testing()
+
+# Include GoogleTest
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG release-1.12.1
+)
+FetchContent_MakeAvailable(googletest)
+
 # Build examples
 add_executable(example_limit examples/example_limit.cpp)
 add_executable(example_market examples/example_market.cpp)
@@ -76,4 +90,22 @@ foreach(TARGET ${EXAMPLE_TARGETS})
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
+endforeach()
+
+# Build tests
+add_executable(test_market tests/test_market_orders.cpp)
+set(TEST_TARGETS test_market)
+foreach(TARGET ${TEST_TARGETS})
+    target_link_libraries(${TARGET} 
+        PRIVATE 
+            ${PROJECT_NAME}
+            gtest
+            gtest_main
+            Threads::Threads
+    )
+    target_include_directories(${TARGET}
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+    add_test(NAME ${TARGET} COMMAND ${TARGET})
 endforeach()

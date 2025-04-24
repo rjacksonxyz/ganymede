@@ -110,6 +110,7 @@ void Orderbook::MatchOrders()
   while (true)
   {
     // Check if there are any orders
+    // TODO: remove this check - redundant given downstream checks
     if (bid_orders.empty() && ask_orders.empty() && market_bid_orders.empty() &&
         market_ask_orders.empty())
       break;
