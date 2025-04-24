@@ -12,6 +12,8 @@
 #include <queue>
 
 class Orderbook {
+  using Trades = std::vector<Trade>;
+
 private:
   struct OrderEntry {
     OrderPointer order_{nullptr};
@@ -54,4 +56,6 @@ public:
   OrderPointers::iterator HandleLimitOrder(OrderPointer order);
   void ShowOrders();
   void MatchOrders();
+  void MatchMarketOrders(Trades &t);
+  void MatchLimitOrders(Trades &t);
 };

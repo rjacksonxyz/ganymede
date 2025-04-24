@@ -39,7 +39,7 @@ target_include_directories(${PROJECT_NAME}
 )
 
 # Find Google Benchmark
-# Help CMake find Google Benchmark
+# Help CMake find Google Benchmark (may need to adjust the path)
 list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/cmake/benchmark")
 find_package(benchmark REQUIRED)
 find_package(benchmark REQUIRED CONFIG)
@@ -55,11 +55,7 @@ foreach(TARGET ${EXAMPLE_TARGETS})
     target_link_libraries(${TARGET} 
         PRIVATE 
             ${PROJECT_NAME}
-            benchmark::benchmark
-            Threads::Threads
     )
-    
-    # Set include directories for all examples
     target_include_directories(${TARGET}
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -76,18 +72,8 @@ foreach(TARGET ${EXAMPLE_TARGETS})
             benchmark::benchmark
             Threads::Threads
     )
-    
-    # Set include directories for all examples
     target_include_directories(${TARGET}
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
 endforeach()
-
-
-# Option for building tests
-option(BUILD_TESTS "Build the tests" OFF)
-if(BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(tests)
-endif()
