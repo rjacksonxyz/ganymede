@@ -165,11 +165,11 @@ void Orderbook::MatchOrders()
   }
 }
 
-void Orderbook::MatchMarketOrders(OrderPointer market_order, AskOrders &non_market_orders)
+void Orderbook::MatchMarketOrders(OrderPointer market_bid_order, AskOrders &non_market_orders)
 {
   auto &[askPrice, asks] = *non_market_orders.begin();
   auto ask = asks.front();
-  Trade trade = Trade::MakeMktTrade(market_order, ask, trade_id_gen.nextId());
+  Trade trade = Trade::MakeMktTrade(market_bid_order, ask, trade_id_gen.nextId());
   if (ask->IsFilled())
   {
     asks.pop_front();
@@ -178,7 +178,7 @@ void Orderbook::MatchMarketOrders(OrderPointer market_order, AskOrders &non_mark
       non_market_orders.erase(askPrice);
     }
   }
-  if (market_order->IsFilled())
+  if (market_bid_order->IsFilled())
   {
     market_bid_orders.pop_front();
   }
@@ -187,11 +187,11 @@ void Orderbook::MatchMarketOrders(OrderPointer market_order, AskOrders &non_mark
   return;
 }
 
-void Orderbook::MatchMarketOrders(OrderPointer market_order, BidOrders &non_market_orders)
+void Orderbook::MatchMarketOrders(OrderPointer market_ask_order, BidOrders &non_market_orders)
 {
   auto &[bidPrice, bids] = *non_market_orders.begin();
   auto bid = bids.front();
-  Trade trade = Trade::MakeMktTrade(bid, market_order, trade_id_gen.nextId());
+  Trade trade = Trade::MakeMktTrade(bid, market_ask_order, trade_id_gen.nextId());
   if (bid->IsFilled())
   {
     bids.pop_front();
@@ -200,7 +200,7 @@ void Orderbook::MatchMarketOrders(OrderPointer market_order, BidOrders &non_mark
       non_market_orders.erase(bidPrice);
     }
   }
-  if (market_order->IsFilled())
+  if (market_ask_order->IsFilled())
   {
     market_ask_orders.pop_front();
   }
