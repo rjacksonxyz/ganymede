@@ -61,6 +61,7 @@ public:
   OrderPointers::iterator HandleLimitOrder(OrderPointer order);
   void ShowOrders();
   void MatchOrders();
+  bool CanMatchLimitOrders();
   void MatchMarketOrders(OrderPointer market_ask, BidOrders &non_market_orders);
   void MatchMarketOrders(OrderPointer market_bid, AskOrders &non_market_orders);
   void MatchLimitOrders(Trades &t);

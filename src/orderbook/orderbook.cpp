@@ -1,4 +1,5 @@
 #include "orderbook.hpp"
+#include "trade/trade.hpp"
 #include <iterator>
 #include <memory>
 #include <mutex>
@@ -104,38 +105,48 @@ void Orderbook::MatchOrders() {
       MatchMarketOrders(market_ask_orders.front(), std::ref(bid_orders));
     }
 
-    // For limit orders, check that both orders exist
-    if (bid_orders.empty() || ask_orders.empty())
+    // Check if limit orders can be matched
+    if (CanMatchLimitOrders())
+      MatchLimitOrders(trades);
+    else
       break;
+  }
+}
 
-    // Get the highest bid and lowest ask
-    auto &[bidPrice, bids] = *bid_orders.begin();
-    auto &[askPrice, asks] = *ask_orders.begin();
+bool Orderbook::CanMatchLimitOrders() {
+  // Get the highest bid and lowest asking price
+  //     // For limit orders, check that both orders exist
+  if (bid_orders.empty() || ask_orders.empty())
+    return false;
 
-    if (bidPrice < askPrice) {
-      break;
+  auto &[bidPrice, bids] = *bid_orders.begin();
+  auto &[askPrice, asks] = *ask_orders.begin();
+
+  if (bidPrice < askPrice) {
+    return false;
+  }
+  return true;
+}
+
+void Orderbook::MatchLimitOrders(Trades &t) {
+  auto &[bidPrice, bids] = *bid_orders.begin();
+  auto &[askPrice, asks] = *ask_orders.begin();
+  while (!bids.empty() && !asks.empty()) {
+    auto bid = bids.front();
+    auto ask = asks.front();
+    Trade trade = Trade::MakeTrade(bid, ask, trade_id_gen.nextId());
+    trades.push_back(trade);
+    if (bid->IsFilled()) {
+      bids.pop_front();
     }
-
-    // process limit orders
-    while (!bids.empty() && !asks.empty()) {
-      auto bid = bids.front();
-      auto ask = asks.front();
-      Trade trade = Trade::MakeTrade(bid, ask, trade_id_gen.nextId());
-      // TODO: remove this after limit order tests are complete
-      std::cout << trade << std::endl;
-      trades.push_back(trade);
-      if (bid->IsFilled()) {
-        bids.pop_front();
-      }
-      if (ask->IsFilled()) {
-        asks.pop_front();
-      }
-      // delete price level if list is empty
-      if (bids.empty())
-        bid_orders.erase(bidPrice);
-      if (asks.empty())
-        ask_orders.erase(askPrice);
+    if (ask->IsFilled()) {
+      asks.pop_front();
     }
+    // delete price level if list is empty
+    if (bids.empty())
+      bid_orders.erase(bidPrice);
+    if (asks.empty())
+      ask_orders.erase(askPrice);
   }
 }
 

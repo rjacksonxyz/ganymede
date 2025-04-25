@@ -94,7 +94,8 @@ endforeach()
 
 # Build tests
 add_executable(test_market tests/test_market_orders.cpp)
-set(TEST_TARGETS test_market)
+add_executable(test_limit tests/test_limit_orders.cpp)
+set(TEST_TARGETS test_market test_limit)
 foreach(TARGET ${TEST_TARGETS})
     target_link_libraries(${TARGET} 
         PRIVATE 
