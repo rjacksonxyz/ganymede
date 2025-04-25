@@ -3,8 +3,7 @@
 #include <memory>
 #include <mutex>
 
-int Orderbook::AddOrder(OrderPointer o)
-{
+int Orderbook::AddOrder(OrderPointer o) {
   std::scoped_lock ordersLock{mutex_};
   auto price = o->GetPrice();
   o->SetId();
@@ -17,8 +16,7 @@ int Orderbook::AddOrder(OrderPointer o)
   // TODO: Pegged Order Support
   // TODO: Trailing Stop Order Support
   // TODO: Fill or Kill Order Support
-  switch (type_)
-  {
+  switch (type_) {
   case OrderType::Market:
     order_location = HandleMarketOrder(o);
     break;
@@ -33,31 +31,26 @@ int Orderbook::AddOrder(OrderPointer o)
   return 0;
 }
 
-void Orderbook::CancelOrder(OrderId orderId)
-{
+void Orderbook::CancelOrder(OrderId orderId) {
   std::scoped_lock ordersLock{mutex_};
 
   CancelOrderInternal(orderId);
 }
 
-void Orderbook::CancelOrderInternal(OrderId orderId)
-{
+void Orderbook::CancelOrderInternal(OrderId orderId) {
   if (orders_.find(orderId) == orders_.end())
     return;
 
   const auto [order, iterator] = orders_.at(orderId);
   orders_.erase(orderId);
 
-  if (order->GetSide() == Side::Ask)
-  {
+  if (order->GetSide() == Side::Ask) {
     auto price = order->GetPrice();
     auto &orders = ask_orders.at(price);
     orders.erase(iterator);
     if (orders.empty())
       ask_orders.erase(price);
-  }
-  else
-  {
+  } else {
     auto price = order->GetPrice();
     auto &orders = bid_orders.at(price);
     orders.erase(iterator);
@@ -67,35 +60,27 @@ void Orderbook::CancelOrderInternal(OrderId orderId)
 }
 
 // TODO: Complete implemtation.
-OrderPointers::iterator Orderbook::HandleMarketOrder(OrderPointer o)
-{
+OrderPointers::iterator Orderbook::HandleMarketOrder(OrderPointer o) {
   OrderPointers::iterator iterator;
   Side side = o->GetSide();
-  if (side == Side::Bid)
-  {
+  if (side == Side::Bid) {
     market_bid_orders.push_front(o);
     iterator = market_bid_orders.begin();
-  }
-  else
-  {
+  } else {
     market_ask_orders.push_front(o);
     iterator = market_ask_orders.begin();
   }
   return iterator;
 }
 
-OrderPointers::iterator Orderbook::HandleLimitOrder(OrderPointer o)
-{
+OrderPointers::iterator Orderbook::HandleLimitOrder(OrderPointer o) {
   OrderPointers::iterator iterator;
   Side side = o->GetSide();
-  if (side == Side::Bid)
-  {
+  if (side == Side::Bid) {
     OrderPointers &bids = bid_orders[o->GetPrice()];
     bids.push_back(o);
     iterator = std::prev(bids.end());
-  }
-  else
-  {
+  } else {
     OrderPointers &asks = ask_orders[o->GetPrice()];
     asks.push_back(o);
     iterator = std::prev(asks.end());
@@ -103,10 +88,8 @@ OrderPointers::iterator Orderbook::HandleLimitOrder(OrderPointer o)
   return iterator;
 }
 
-void Orderbook::MatchOrders()
-{
-  while (true)
-  {
+void Orderbook::MatchOrders() {
+  while (true) {
     // Check if there are any orders
     // TODO: remove this check - redundant given downstream checks
     if (bid_orders.empty() && ask_orders.empty() && market_bid_orders.empty() &&
@@ -114,12 +97,10 @@ void Orderbook::MatchOrders()
       break;
 
     // Process market orders first (execute at any price available)
-    while (!market_bid_orders.empty() && !ask_orders.empty())
-    {
+    while (!market_bid_orders.empty() && !ask_orders.empty()) {
       MatchMarketOrders(market_bid_orders.front(), std::ref(ask_orders));
     }
-    while (!market_ask_orders.empty() && !bid_orders.empty())
-    {
+    while (!market_ask_orders.empty() && !bid_orders.empty()) {
       MatchMarketOrders(market_ask_orders.front(), std::ref(bid_orders));
     }
 
@@ -131,26 +112,22 @@ void Orderbook::MatchOrders()
     auto &[bidPrice, bids] = *bid_orders.begin();
     auto &[askPrice, asks] = *ask_orders.begin();
 
-    if (bidPrice < askPrice)
-    {
+    if (bidPrice < askPrice) {
       break;
     }
 
     // process limit orders
-    while (!bids.empty() && !asks.empty())
-    {
+    while (!bids.empty() && !asks.empty()) {
       auto bid = bids.front();
       auto ask = asks.front();
       Trade trade = Trade::MakeTrade(bid, ask, trade_id_gen.nextId());
       // TODO: remove this after limit order tests are complete
       std::cout << trade << std::endl;
       trades.push_back(trade);
-      if (bid->IsFilled())
-      {
+      if (bid->IsFilled()) {
         bids.pop_front();
       }
-      if (ask->IsFilled())
-      {
+      if (ask->IsFilled()) {
         asks.pop_front();
       }
       // delete price level if list is empty
@@ -162,62 +139,54 @@ void Orderbook::MatchOrders()
   }
 }
 
-void Orderbook::MatchMarketOrders(OrderPointer market_bid_order, AskOrders &non_market_orders)
-{
+void Orderbook::MatchMarketOrders(OrderPointer market_bid_order,
+                                  AskOrders &non_market_orders) {
   auto &[askPrice, asks] = *non_market_orders.begin();
   auto ask = asks.front();
-  Trade trade = Trade::MakeMktTrade(market_bid_order, ask, trade_id_gen.nextId());
-  if (ask->IsFilled())
-  {
+  Trade trade =
+      Trade::MakeMktTrade(market_bid_order, ask, trade_id_gen.nextId());
+  if (ask->IsFilled()) {
     asks.pop_front();
-    if (asks.empty())
-    {
+    if (asks.empty()) {
       non_market_orders.erase(askPrice);
     }
   }
-  if (market_bid_order->IsFilled())
-  {
+  if (market_bid_order->IsFilled()) {
     market_bid_orders.pop_front();
   }
   trades.push_back(trade);
   return;
 }
 
-void Orderbook::MatchMarketOrders(OrderPointer market_ask_order, BidOrders &non_market_orders)
-{
+void Orderbook::MatchMarketOrders(OrderPointer market_ask_order,
+                                  BidOrders &non_market_orders) {
   auto &[bidPrice, bids] = *non_market_orders.begin();
   auto bid = bids.front();
-  Trade trade = Trade::MakeMktTrade(bid, market_ask_order, trade_id_gen.nextId());
-  if (bid->IsFilled())
-  {
+  Trade trade =
+      Trade::MakeMktTrade(bid, market_ask_order, trade_id_gen.nextId());
+  if (bid->IsFilled()) {
     bids.pop_front();
-    if (bids.empty())
-    {
+    if (bids.empty()) {
       non_market_orders.erase(bidPrice);
     }
   }
-  if (market_ask_order->IsFilled())
-  {
+  if (market_ask_order->IsFilled()) {
     market_ask_orders.pop_front();
   }
   trades.push_back(trade);
   return;
 }
 
-void Orderbook::ShowOrders()
-{
+void Orderbook::ShowOrders() {
   std::scoped_lock orderLock{mutex_};
   std::cout << "Bids:" << std::endl;
   std::cout << "(Limit Orders)" << '\n';
   if (bid_orders.empty())
     std::cout << "[NONE]" << std::endl;
-  else
-  {
-    for (const auto &[price, orders] : bid_orders)
-    {
+  else {
+    for (const auto &[price, orders] : bid_orders) {
       std::cout << "Price: " << price << ", Orders: ";
-      for (const auto &order : orders)
-      {
+      for (const auto &order : orders) {
         std::cout << "[ID: " << order->GetId()
                   << ", Requested Quantity: " << order->GetQuantity()
                   << ", Remaining Quantity: " << order->GetRemainingQuantity()
@@ -229,10 +198,8 @@ void Orderbook::ShowOrders()
   std::cout << "(Market Orders)" << '\n';
   if (market_bid_orders.empty())
     std::cout << "[NONE]" << std::endl;
-  else
-  {
-    for (const auto &order : market_bid_orders)
-    {
+  else {
+    for (const auto &order : market_bid_orders) {
       std::cout << "[ID: " << order->GetId()
                 << ", Requested Quantity: " << order->GetQuantity()
                 << ", Remaining Quantity: " << order->GetRemainingQuantity()
@@ -245,13 +212,10 @@ void Orderbook::ShowOrders()
   std::cout << "(Limit Orders)" << '\n';
   if (ask_orders.empty())
     std::cout << "[NONE]" << std::endl;
-  else
-  {
-    for (const auto &[price, orders] : ask_orders)
-    {
+  else {
+    for (const auto &[price, orders] : ask_orders) {
       std::cout << "Price: " << price << ", Orders: ";
-      for (const auto &order : orders)
-      {
+      for (const auto &order : orders) {
         std::cout << "[ID: " << order->GetId()
                   << ", Requested Quantity: " << order->GetQuantity()
                   << ", Remaining Quantity: " << order->GetRemainingQuantity()
@@ -263,10 +227,8 @@ void Orderbook::ShowOrders()
   std::cout << "(Market Orders)" << '\n';
   if (market_ask_orders.empty())
     std::cout << "[NONE]" << std::endl;
-  else
-  {
-    for (const auto &order : market_ask_orders)
-    {
+  else {
+    for (const auto &order : market_ask_orders) {
       std::cout << "[ID: " << order->GetId()
                 << ", Requested Quantity: " << order->GetQuantity()
                 << ", Remaining Quantity: " << order->GetRemainingQuantity()

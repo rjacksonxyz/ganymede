@@ -12,8 +12,7 @@
 #include <mutex>
 #include <queue>
 
-class Orderbook
-{
+class Orderbook {
   using Trades = std::vector<Trade>;
   template <typename Comparator>
   using OrderMap = std::map<Price, OrderPointers, Comparator>;
@@ -21,8 +20,7 @@ class Orderbook
   using BidOrders = OrderMap<std::greater<Price>>;
 
 private:
-  struct OrderEntry
-  {
+  struct OrderEntry {
     OrderPointer order_{nullptr};
     OrderPointers::iterator location_;
   };
@@ -50,8 +48,7 @@ private:
   mutable std::mutex mutex_;
 
 public:
-  Orderbook() : trade_id_gen(SnowflakeGenerator(0))
-  {
+  Orderbook() : trade_id_gen(SnowflakeGenerator(0)) {
     bid_orders = {};
     ask_orders = {};
     market_bid_orders = {};
@@ -64,21 +61,18 @@ public:
   OrderPointers::iterator HandleLimitOrder(OrderPointer order);
   void ShowOrders();
   void MatchOrders();
-  void MatchMarketOrders(OrderPointer market_bid, BidOrders &non_market_orders);
-  void MatchMarketOrders(OrderPointer market_ask, AskOrders &non_market_orders);
+  void MatchMarketOrders(OrderPointer market_ask, BidOrders &non_market_orders);
+  void MatchMarketOrders(OrderPointer market_bid, AskOrders &non_market_orders);
   void MatchLimitOrders(Trades &t);
-  Quantity GetTradeVolume()
-  {
+  Quantity GetTradeVolume() {
     std::scoped_lock lock{mutex_};
     Quantity trade_volume = 0;
-    for (auto trade : trades)
-    {
+    for (auto trade : trades) {
       trade_volume += trade.GetQuantity();
     }
     return trade_volume;
   }
-  Trades GetTrades() const
-  {
+  Trades GetTrades() const {
     std::scoped_lock lock{mutex_};
     return trades;
   }
