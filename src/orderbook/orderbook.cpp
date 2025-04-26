@@ -92,11 +92,6 @@ OrderPointers::iterator Orderbook::HandleLimitOrder(OrderPointer o) {
 void Orderbook::MatchOrders() {
   while (true) {
     // Check if there are any orders
-    // TODO: remove this check - redundant given downstream checks
-    if (bid_orders.empty() && ask_orders.empty() && market_bid_orders.empty() &&
-        market_ask_orders.empty())
-      break;
-
     // Process market orders first (execute at any price available)
     while (!market_bid_orders.empty() && !ask_orders.empty()) {
       MatchMarketOrders(market_bid_orders.front(), std::ref(ask_orders));

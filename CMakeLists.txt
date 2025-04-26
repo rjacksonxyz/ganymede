@@ -5,6 +5,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Set optimization flags
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
+endif()
+
 # Find Threads package
 find_package(Threads REQUIRED)
 
@@ -78,7 +85,8 @@ endforeach()
 
 # Build benchmarks
 add_executable(benchmark_limit benchmarks/benchmark_limit.cpp)
-set(EXAMPLE_TARGETS benchmark_limit)
+add_executable(benchmark_market benchmarks/benchmark_market.cpp)
+set(EXAMPLE_TARGETS benchmark_limit benchmark_market)
 foreach(TARGET ${EXAMPLE_TARGETS})
     target_link_libraries(${TARGET} 
         PRIVATE 

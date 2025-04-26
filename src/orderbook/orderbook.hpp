@@ -77,4 +77,9 @@ public:
     std::scoped_lock lock{mutex_};
     return trades;
   }
+  short GetSideCount() const {
+    return (short)!bid_orders.empty() + (short)!ask_orders.empty() +
+           (short)!market_bid_orders.empty() +
+           (short)!market_ask_orders.empty();
+  }
 };
