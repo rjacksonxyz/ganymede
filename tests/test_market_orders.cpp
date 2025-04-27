@@ -17,8 +17,8 @@ protected:
   }
 
 public:
-  void makeLimitBids() {
-    std::list<Order> orders = getOrders(OrderType::Limit);
+  void makeBids(OrderType orderType) {
+    std::list<Order> orders = getOrders(orderType);
     for (auto &op : orders) {
       op.SetSide(Side::Bid);
       ob.AddOrder(op);
@@ -26,26 +26,8 @@ public:
     }
   }
 
-  void makeMarketBids() {
-    std::list<Order> orders = getOrders(OrderType::Market);
-    for (auto &op : orders) {
-      op.SetSide(Side::Bid);
-      ob.AddOrder(op);
-      bidQuantity += op.GetQuantity();
-    }
-  }
-
-  void makeLimitAsks() {
-    std::list<Order> orders = getOrders(OrderType::Limit);
-    for (auto &op : orders) {
-      op.SetSide(Side::Ask);
-      ob.AddOrder(op);
-      askQuantity += op.GetQuantity();
-    }
-  }
-
-  void makeMarketAsks() {
-    std::list<Order> orders = getOrders(OrderType::Market);
+  void makeAsks(OrderType orderType) {
+    std::list<Order> orders = getOrders(orderType);
     for (auto &op : orders) {
       op.SetSide(Side::Ask);
       ob.AddOrder(op);
@@ -77,16 +59,16 @@ public:
 };
 
 TEST_F(OrderbookMarketOrderTest, MarketBidOrdersMatchCorrectly) {
-  makeMarketBids();
-  makeLimitAsks();
+  makeBids(OrderType::Market);
+  makeAsks(OrderType::Limit);
 
   int expectedTradedQuantity = std::min(askQuantity, bidQuantity);
   EXPECT_EQ(ob.GetTradeVolume(), expectedTradedQuantity);
 }
 
 TEST_F(OrderbookMarketOrderTest, MarketAskOrdersMatchCorrectly) {
-  makeMarketAsks();
-  makeLimitBids();
+  makeAsks(OrderType::Market);
+  makeBids(OrderType::Limit);
 
   int expectedTradedQuantity = std::min(askQuantity, bidQuantity);
   EXPECT_EQ(ob.GetTradeVolume(), expectedTradedQuantity);
