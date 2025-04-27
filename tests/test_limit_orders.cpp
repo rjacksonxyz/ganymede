@@ -52,9 +52,10 @@ public:
       Price p = 59.50 + i * 0.10;
       Quantity q = 70 + i;
       Order op1(Side::Bid, q, OrderType::Limit, p);
-      // pushing to front to test that the orderbook can handle it
+      // pushing to front for test logic.
       // if lower price orders are added first, they will be matched first
       // and the orderbook will still work correctly but not all orders will be matched ("overpriced" bids will match with "underpriced" asks)
+      // TODO: update test logic to determing the expected trade volume at runtime.
       orders.push_front(op1);
     }
     return orders;
