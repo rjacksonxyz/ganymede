@@ -4,15 +4,17 @@
 #include "../snowflake/snowflake.hpp"
 #include "../trade/trade.hpp"
 
-#include "../order/order.hpp"
 #include <functional>
 #include <iostream>
 #include <iterator>
 #include <map>
 #include <mutex>
 #include <queue>
+#include <list>
+#include <unordered_map>
 
-class Orderbook {
+class Orderbook
+{
   using Trades = std::vector<Trade>;
   template <typename Comparator>
   using OrderMap = std::map<Price, OrderPointers, Comparator>;
@@ -20,8 +22,9 @@ class Orderbook {
   using BidOrders = OrderMap<std::greater<Price>>;
 
 private:
-  struct OrderEntry {
-    OrderPointer order_{nullptr};
+  struct OrderEntry
+  {
+    Order order;
     OrderPointers::iterator location_;
   };
   // unordered map of all orders, stored by order ID.
@@ -40,44 +43,49 @@ private:
   Price last_price;
   // market_buy_orders holds all the orders on the bid side of the order book
   // of a market type that were not filled immediately.
-  std::list<OrderPointer> market_bid_orders;
-  std::list<OrderPointer> market_ask_orders;
+  std::list<Order> market_bid_orders;
+  std::list<Order> market_ask_orders;
   std::thread marketOrdersPruneThread_;
   SnowflakeGenerator trade_id_gen;
   Trades trades;
   mutable std::mutex mutex_;
 
 public:
-  Orderbook() : trade_id_gen(SnowflakeGenerator(0)) {
+  Orderbook() : trade_id_gen(SnowflakeGenerator(0))
+  {
     bid_orders = {};
     ask_orders = {};
     market_bid_orders = {};
     market_ask_orders = {};
   }
-  int AddOrder(OrderPointer order);
+  int AddOrder(Order order);
   void CancelOrder(OrderId id);
   void CancelOrderInternal(OrderId orderId);
-  OrderPointers::iterator HandleMarketOrder(OrderPointer order);
-  OrderPointers::iterator HandleLimitOrder(OrderPointer order);
+  OrderPointers::iterator HandleMarketOrder(Order &order);
+  OrderPointers::iterator HandleLimitOrder(Order &order);
   void ShowOrders();
   void MatchOrders();
   bool CanMatchLimitOrders();
-  void MatchMarketOrders(OrderPointer market_ask, BidOrders &non_market_orders);
-  void MatchMarketOrders(OrderPointer market_bid, AskOrders &non_market_orders);
+  void MatchMarketOrders(Order &market_ask, BidOrders &non_market_orders);
+  void MatchMarketOrders(Order &market_bid, AskOrders &non_market_orders);
   void MatchLimitOrders(Trades &t);
-  Quantity GetTradeVolume() {
+  Quantity GetTradeVolume()
+  {
     std::scoped_lock lock{mutex_};
     Quantity trade_volume = 0;
-    for (auto trade : trades) {
+    for (auto trade : trades)
+    {
       trade_volume += trade.GetQuantity();
     }
     return trade_volume;
   }
-  Trades GetTrades() const {
+  Trades GetTrades() const
+  {
     std::scoped_lock lock{mutex_};
     return trades;
   }
-  short GetSideCount() const {
+  short GetSideCount() const
+  {
     return (short)!bid_orders.empty() + (short)!ask_orders.empty() +
            (short)!market_bid_orders.empty() +
            (short)!market_ask_orders.empty();

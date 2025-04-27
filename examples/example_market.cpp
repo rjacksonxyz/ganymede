@@ -26,9 +26,9 @@ void makeAsks(Orderbook &ob)
   {
     Quantity q = 35 + i;
     Price p = 59.50 + i * 0.10;
-    auto op1 = std::make_shared<Order>(Side::Ask, q, OrderType::Limit, p);
+    Order op1(Side::Ask, q, OrderType::Limit, p);
     ob.AddOrder(op1);
-    auto op2 = std::make_shared<Order>(Side::Ask, q, OrderType::Limit, p);
+    Order op2(Side::Ask, q, OrderType::Limit, p);
     ob.AddOrder(op2);
     askQuantity += q * 2;
   }
@@ -39,7 +39,7 @@ void makeBids(Orderbook &ob)
   for (int i = 0; i < ORDER_N; ++i)
   {
     Quantity q = 70 + i;
-    auto op1 = std::make_shared<Order>(Side::Bid, q, OrderType::Market, 0);
+    Order op1(Side::Bid, q, OrderType::Market, 0);
     ob.AddOrder(op1);
     bidQuantity += q;
   }
