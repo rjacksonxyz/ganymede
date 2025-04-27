@@ -1,101 +1,98 @@
 #include "../src/orderbook/orderbook.hpp"
-#include <gtest/gtest.h>
-#include <thread>
 #include <algorithm>
+#include <gtest/gtest.h>
 #include <memory>
+#include <thread>
 
-class OrderbookMarketOrderTest : public ::testing::Test
-{
+class OrderbookMarketOrderTest : public ::testing::Test {
 protected:
-    static const int ORDER_N = 20;
-    int askQuantity = 0;
-    int bidQuantity = 0;
-    Orderbook ob;
+  static const int ORDER_N = 20;
+  int askQuantity = 0;
+  int bidQuantity = 0;
+  Orderbook ob;
 
-    void SetUp() override
-    {
-        askQuantity = 0;
-        bidQuantity = 0;
-    }
+  void SetUp() override {
+    askQuantity = 0;
+    bidQuantity = 0;
+  }
 
 public:
-    void makeMarketBids()
-    {
-        for (int i = 0; i < ORDER_N; ++i)
-        {
-            Quantity q = 70 + i;
-            Order op1(Side::Bid, q, OrderType::Market, 0);
-            ob.AddOrder(op1);
-            bidQuantity += q;
-        }
+  void makeLimitBids() {
+    std::list<Order> orders = getOrders(OrderType::Limit);
+    for (auto &op : orders) {
+      op.SetSide(Side::Bid);
+      ob.AddOrder(op);
+      bidQuantity += op.GetQuantity();
     }
+  }
 
-    void makeLimitBids()
-    {
-        for (int i = 0; i < ORDER_N; ++i)
-        {
-            Quantity q = 70 + i;
-            Price p = 59.50 + i * 0.10;
-            Order op1(Side::Bid, q, OrderType::Limit, p);
-            ob.AddOrder(op1);
-            bidQuantity += q;
-        }
+  void makeMarketBids() {
+    std::list<Order> orders = getOrders(OrderType::Market);
+    for (auto &op : orders) {
+      op.SetSide(Side::Bid);
+      ob.AddOrder(op);
+      bidQuantity += op.GetQuantity();
     }
+  }
 
-    void makeMarketAsks()
-    {
-        for (int i = 0; i < ORDER_N / 2; ++i)
-        {
-            Quantity q = 35 + i;
-            Order op1(Side::Ask, q, OrderType::Market, 0);
-            ob.AddOrder(op1);
-            Order op2(Side::Ask, q, OrderType::Market, 0);
-            ob.AddOrder(op2);
-            askQuantity += q * 2;
-        }
+  void makeLimitAsks() {
+    std::list<Order> orders = getOrders(OrderType::Limit);
+    for (auto &op : orders) {
+      op.SetSide(Side::Ask);
+      ob.AddOrder(op);
+      askQuantity += op.GetQuantity();
     }
+  }
 
-    void makeLimitAsks()
-    {
-        for (int i = 0; i < ORDER_N / 2; ++i)
-        {
-            Quantity q = 35 + i;
-            Price p = 59.50 + i * 0.10;
-            Order op1(Side::Ask, q, OrderType::Limit, p);
-            ob.AddOrder(op1);
-            Order op2(Side::Ask, q, OrderType::Limit, p);
-            ob.AddOrder(op2);
-            askQuantity += q * 2;
-        }
+  void makeMarketAsks() {
+    std::list<Order> orders = getOrders(OrderType::Market);
+    for (auto &op : orders) {
+      op.SetSide(Side::Ask);
+      ob.AddOrder(op);
+      askQuantity += op.GetQuantity();
     }
+  }
+
+  std::list<Order> getOrders(OrderType orderType) {
+    // construct 10 orders, all limit bid orders, increasing in price from
+    // 59.50 to 60.50
+    std::list<Order> orders;
+    for (int i = 0; i < 10; ++i) {
+      Price p = 59.50 + i * 0.10;
+      if (orderType == OrderType::Market) {
+        p = 0; // market orders don't have a price
+      }
+      Quantity q = 70 + i;
+      Order op1(Side::Bid, q, orderType, p);
+      // pushing to front for test logic.
+      // if lower price orders are added first, they will be matched first
+      // and the orderbook will still work correctly but not all orders will be
+      // matched ("overpriced" bids will match with "underpriced" asks)
+      // TODO: update test logic to determing the expected trade volume at
+      // runtime.
+      orders.push_front(op1);
+    }
+    return orders;
+  }
 };
 
-TEST_F(OrderbookMarketOrderTest, MarketBidOrdersMatchCorrectly)
-{
-    std::thread bid_thread(&OrderbookMarketOrderTest::makeMarketBids, this);
-    std::thread ask_thread(&OrderbookMarketOrderTest::makeLimitAsks, this);
+TEST_F(OrderbookMarketOrderTest, MarketBidOrdersMatchCorrectly) {
+  makeMarketBids();
+  makeLimitAsks();
 
-    ask_thread.join();
-    bid_thread.join();
-
-    int expectedTradedQuantity = std::min(askQuantity, bidQuantity);
-    EXPECT_EQ(ob.GetTradeVolume(), expectedTradedQuantity);
+  int expectedTradedQuantity = std::min(askQuantity, bidQuantity);
+  EXPECT_EQ(ob.GetTradeVolume(), expectedTradedQuantity);
 }
 
-TEST_F(OrderbookMarketOrderTest, MarketAskOrdersMatchCorrectly)
-{
-    std::thread ask_thread(&OrderbookMarketOrderTest::makeMarketAsks, this);
-    std::thread bid_thread(&OrderbookMarketOrderTest::makeLimitBids, this);
+TEST_F(OrderbookMarketOrderTest, MarketAskOrdersMatchCorrectly) {
+  makeMarketAsks();
+  makeLimitBids();
 
-    ask_thread.join();
-    bid_thread.join();
-
-    int expectedTradedQuantity = std::min(askQuantity, bidQuantity);
-    EXPECT_EQ(ob.GetTradeVolume(), expectedTradedQuantity);
+  int expectedTradedQuantity = std::min(askQuantity, bidQuantity);
+  EXPECT_EQ(ob.GetTradeVolume(), expectedTradedQuantity);
 }
 
-int main(int argc, char **argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

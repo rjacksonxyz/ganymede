@@ -3,20 +3,15 @@
 void makeBids(Orderbook &ob);
 void makeAsks(Orderbook &ob);
 
-int main()
-{
+int main() {
   Orderbook ob = Orderbook();
-  std::thread bid_thread(makeBids, std::ref(ob));
-  std::thread ask_thread(makeAsks, std::ref(ob));
-  bid_thread.join();
-  ask_thread.join();
+  makeBids(ob);
+  makeAsks(ob);
   ob.ShowOrders();
 }
 
-void makeAsks(Orderbook &ob)
-{
-  for (int i = 0; i < 10; ++i)
-  {
+void makeAsks(Orderbook &ob) {
+  for (int i = 0; i < 10; ++i) {
     Quantity q = 35 + i;
     Price p = 59.50 + i * 0.10;
     Order op1(Side::Ask, q, OrderType::Limit, p);
@@ -26,10 +21,8 @@ void makeAsks(Orderbook &ob)
   }
 }
 
-void makeBids(Orderbook &ob)
-{
-  for (int i = 0; i < 10; ++i)
-  {
+void makeBids(Orderbook &ob) {
+  for (int i = 0; i < 10; ++i) {
     Quantity q = 70 + i;
     Price p = 60.50 - i * 0.10;
     Order op1(Side::Bid, q, OrderType::Limit, p);
